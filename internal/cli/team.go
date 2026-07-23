@@ -165,7 +165,7 @@ func syncOne(ctx context.Context, p *project, env, fingerprint string) error {
 	if err != nil {
 		return err
 	}
-	defer unlock()
+	defer releaseLock(unlock)
 
 	m, plaintext, err := sess.Current(ctx, env)
 	if err != nil {

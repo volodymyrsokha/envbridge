@@ -29,7 +29,7 @@ func main() {
 				if err != nil {
 					return
 				}
-				s.Serve()
+				_ = s.Serve()
 			},
 		},
 	}

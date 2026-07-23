@@ -76,6 +76,10 @@ func Execute() {
 	}
 }
 
-func notImplemented(milestone string) error {
-	return fmt.Errorf("not implemented yet — planned for %s, see DESIGN.md", milestone)
+// releaseLock is the deferred counterpart of Store.Lock — a failed release
+// isn't fatal (locks go stale after 10 minutes) but the user should know.
+func releaseLock(unlock func() error) {
+	if err := unlock(); err != nil {
+		fmt.Fprintln(os.Stderr, ui.Hint("could not release the lock (it goes stale in 10 minutes): "+err.Error()))
+	}
 }

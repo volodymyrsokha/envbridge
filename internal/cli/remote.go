@@ -66,10 +66,10 @@ func openProject() (*project, error) {
 
 func (p *project) Close() {
 	for _, c := range p.sftp {
-		c.Close()
+		_ = c.Close()
 	}
 	for _, c := range p.ssh {
-		c.Close()
+		_ = c.Close()
 	}
 }
 
@@ -110,7 +110,7 @@ func (p *project) storeFor(env string) (store.Store, error) {
 	}
 	sftpClient, err := sftp.NewClient(sshClient)
 	if err != nil {
-		sshClient.Close()
+		_ = sshClient.Close()
 		return nil, fmt.Errorf("%s: SFTP subsystem unavailable: %w", host, err)
 	}
 	p.ssh[host] = sshClient

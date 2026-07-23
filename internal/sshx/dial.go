@@ -1,6 +1,7 @@
 package sshx
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -54,12 +55,11 @@ func DefaultDialer() *Dialer {
 }
 
 func loadSSHConfig(path string) *ssh_config.Config {
-	f, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}
-	defer f.Close()
-	cfg, err := ssh_config.Decode(f)
+	cfg, err := ssh_config.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil
 	}

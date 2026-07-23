@@ -72,7 +72,7 @@ func pullOne(ctx context.Context, p *project, env string, adopt, force bool) err
 			return err
 		}
 		m, err = sess.Write(ctx, env, materialized, envCfg.Materialize)
-		unlock()
+		releaseLock(unlock)
 		if err != nil {
 			return err
 		}

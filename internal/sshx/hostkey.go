@@ -48,10 +48,9 @@ func appendKnownHost(path, hostname string, key ssh.PublicKey) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
-	_, err = f.WriteString(line + "\n")
-	return err
+	_, werr := f.WriteString(line + "\n")
+	return errors.Join(werr, f.Close())
 }
 
 func ensureFile(path string) error {

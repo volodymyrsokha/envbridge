@@ -9,7 +9,6 @@ your team and your own infrastructure over the SSH access you already have.
 
 [![CI](https://github.com/volodymyrsokha/envbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/volodymyrsokha/envbridge/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/volodymyrsokha/envbridge?color=blue)](https://github.com/volodymyrsokha/envbridge/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/volodymyrsokha/envbridge)](https://goreportcard.com/report/github.com/volodymyrsokha/envbridge)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/volodymyrsokha/envbridge)](go.mod)
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 

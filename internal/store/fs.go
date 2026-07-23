@@ -151,7 +151,7 @@ func (l *FS) Lock(ctx context.Context, env string, info LockInfo) (func() error,
 			return nil, fmt.Errorf("%s is locked (unreadable lock file %s) — remove it manually if no operation is in flight", env, path)
 		}
 		if time.Since(holder.At) > lockStaleAfter {
-			l.fs.Remove(path)
+			_ = l.fs.Remove(path)
 			continue
 		}
 		return nil, fmt.Errorf("%s is locked by %s (since %s) — retry when their operation finishes", env, holder.Who, holder.At.Format(time.RFC3339))

@@ -69,7 +69,7 @@ func pushOne(ctx context.Context, p *project, env string, force bool) error {
 	if err != nil {
 		return err
 	}
-	defer unlock()
+	defer releaseLock(unlock)
 
 	m, remote, err := sess.Current(ctx, env)
 	if err != nil {

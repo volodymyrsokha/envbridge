@@ -45,7 +45,7 @@ func (s *sftpFS) ReadFile(p string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return io.ReadAll(f)
 }
 
@@ -57,25 +57,25 @@ func (s *sftpFS) WriteFileAtomic(p string, data []byte, mode os.FileMode) error 
 		return err
 	}
 	if _, err := f.Write(data); err != nil {
-		f.Close()
-		s.c.Remove(tmp)
+		_ = f.Close()
+		_ = s.c.Remove(tmp)
 		return err
 	}
 	if err := f.Chmod(mode); err != nil {
-		f.Close()
-		s.c.Remove(tmp)
+		_ = f.Close()
+		_ = s.c.Remove(tmp)
 		return err
 	}
 	if err := f.Close(); err != nil {
-		s.c.Remove(tmp)
+		_ = s.c.Remove(tmp)
 		return err
 	}
 	// POSIX rename overwrites the target; fall back for servers without the
 	// openssh extension.
 	if err := s.c.PosixRename(tmp, p); err != nil {
-		s.c.Remove(p)
+		_ = s.c.Remove(p)
 		if err := s.c.Rename(tmp, p); err != nil {
-			s.c.Remove(tmp)
+			_ = s.c.Remove(tmp)
 			return err
 		}
 	}

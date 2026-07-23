@@ -31,10 +31,10 @@ func GenerateIdentity(path string) (*age.X25519Identity, error) {
 		}
 		return nil, err
 	}
-	defer f.Close()
 	content := fmt.Sprintf("# created: %s\n# public key: %s\n%s\n",
 		time.Now().Format(time.RFC3339), id.Recipient(), id)
-	if _, err := f.WriteString(content); err != nil {
+	_, werr := f.WriteString(content)
+	if err := errors.Join(werr, f.Close()); err != nil {
 		return nil, err
 	}
 	return id, nil

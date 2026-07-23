@@ -72,7 +72,7 @@ func runEdit(ctx context.Context, env string, local, adopt, yes bool) error {
 	if err != nil {
 		return err
 	}
-	defer unlock()
+	defer releaseLock(unlock)
 
 	manifest, current, err := sess.Current(ctx, env)
 	if err != nil {
@@ -144,9 +144,9 @@ func editorRoundTrip(env string, content []byte) ([]byte, error) {
 	path := filepath.Join(dir, env+".env")
 	defer func() {
 		if info, err := os.Stat(path); err == nil {
-			os.WriteFile(path, make([]byte, info.Size()), 0o600)
+			_ = os.WriteFile(path, make([]byte, info.Size()), 0o600)
 		}
-		os.RemoveAll(dir)
+		_ = os.RemoveAll(dir)
 	}()
 	if err := os.WriteFile(path, content, 0o600); err != nil {
 		return nil, err

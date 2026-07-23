@@ -198,7 +198,7 @@ func initEnv(ctx context.Context, p *project, env string) error {
 	if err != nil {
 		return err
 	}
-	defer unlock()
+	defer releaseLock(unlock)
 	m, err := sess.Write(ctx, env, existing, envCfg.Materialize)
 	if err != nil {
 		return err
