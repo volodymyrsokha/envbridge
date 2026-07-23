@@ -90,11 +90,21 @@ Plaintext touches disk in exactly three places — your local env file, the serv
 
 ## Install
 
+**One-liner** (macOS / Linux, amd64 / arm64 — verifies checksums):
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/volodymyrsokha/envbridge/main/install.sh | sh
+```
+
+**With Go:**
+
 ```console
 $ go install github.com/volodymyrsokha/envbridge/cmd/envbridge@latest
 ```
 
-Prebuilt binaries land on the [releases page](https://github.com/volodymyrsokha/envbridge/releases) with each tag; a Homebrew tap follows the first stable release.
+**Manually:** grab an archive from the [releases page](https://github.com/volodymyrsokha/envbridge/releases), untar, and put `envbridge` on your `PATH`.
+
+Servers need nothing installed — envbridge talks plain SFTP. (The optional `edit --local` workflow on a server is the same single binary.)
 
 ## Status
 
