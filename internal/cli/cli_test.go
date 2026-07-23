@@ -14,9 +14,11 @@ import (
 	"github.com/pkg/sftp"
 	gossh "golang.org/x/crypto/ssh"
 
+	"github.com/volodymyrsokha/envbridge/internal/agecrypt"
 	"github.com/volodymyrsokha/envbridge/internal/config"
 	"github.com/volodymyrsokha/envbridge/internal/sshx"
 	"github.com/volodymyrsokha/envbridge/internal/state"
+	"github.com/volodymyrsokha/envbridge/internal/store"
 )
 
 func startSSHServer(t *testing.T) string {
@@ -164,5 +166,55 @@ func TestPushPullConflictAndAdoptOverSSH(t *testing.T) {
 	row := statusOne(ctx, bob, "production")
 	if row.Error != "" || row.Local != "✓ in sync" || !strings.HasPrefix(row.Server, "✓ clean") {
 		t.Fatalf("status row = %+v", row)
+	}
+}
+
+func TestTeamSyncReencryptsForNewRoster(t *testing.T) {
+	ctx := context.Background()
+	addr := startSSHServer(t)
+	serverDir := t.TempDir()
+	os.MkdirAll(filepath.Join(serverDir, "srv"), 0o755)
+
+	identity, _ := age.GenerateX25519Identity()
+	alice := newTestProject(t, addr, serverDir, identity)
+	writeLocal(t, alice, "SECRET=x\n")
+	if err := pushOne(ctx, alice, "production", false); err != nil {
+		t.Fatal(err)
+	}
+
+	newcomer, _ := age.GenerateX25519Identity()
+	alice.cfg.Recipients = append(alice.cfg.Recipients,
+		config.Recipient{Name: "New", Email: "new@t", Key: newcomer.Recipient().String()})
+
+	fingerprint := store.RecipientsFingerprint(alice.cfg.RecipientKeys())
+	if err := syncOne(ctx, alice, "production", fingerprint); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := alice.storeFor("production")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := st.ReadManifest(ctx, "production")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.RecipientsFingerprint != fingerprint {
+		t.Error("manifest fingerprint not updated")
+	}
+	blob, err := st.ReadBlob(ctx, "production")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for who, id := range map[string]*age.X25519Identity{"original": identity, "newcomer": newcomer} {
+		got, err := agecrypt.Decrypt(blob, id)
+		if err != nil || string(got) != "SECRET=x\n" {
+			t.Errorf("%s cannot decrypt after sync: %q, %v", who, got, err)
+		}
+	}
+
+	// Second sync is a no-op for an already-synced roster.
+	if err := syncOne(ctx, alice, "production", fingerprint); err != nil {
+		t.Fatal(err)
 	}
 }

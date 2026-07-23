@@ -51,6 +51,12 @@ func (l *FS) Init(ctx context.Context) error {
 	return nil
 }
 
+// ReadPath reads an arbitrary file wherever this store lives — init uses it
+// to import a server's existing env file before any manifest exists.
+func (l *FS) ReadPath(ctx context.Context, path string) ([]byte, error) {
+	return l.fs.ReadFile(path)
+}
+
 func (l *FS) ReadManifest(ctx context.Context, env string) (*Manifest, error) {
 	data, err := l.fs.ReadFile(l.manifestPath(env))
 	if errors.Is(err, os.ErrNotExist) {
