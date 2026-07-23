@@ -215,14 +215,14 @@ Host keys are verified against `known_hosts` with an explicit trust-on-first-use
 
 ## 9. Roadmap
 
-| Milestone | Deliverable | Notes |
+| Milestone | Deliverable | Status |
 |---|---|---|
-| M1 | `envfile` parser/writer + fuzz round-trip | must be bulletproof before anything else |
-| M2 | `envdiff` + masking; `agecrypt` + `keygen` | pure units |
-| M3 | config + state + `Store` + `localStore` + `edit --local` | first shippable value — replaces vim-on-server with zero SSH code |
-| M4 | `sshx` + `sftpStore` + pull/push/status/diff | integration tests on in-process gliderlabs/ssh |
-| M5 | `init` wizard (incl. server import) + `team` | |
-| M6 | UX polish, `--json`, NO_COLOR, completions, goreleaser + brew | |
+| M1 | `envfile` parser/writer + fuzz round-trip | ✅ done |
+| M2 | `envdiff` + masking; `agecrypt` + `keygen` | ✅ done |
+| M3 | config + state + `Store` + `localStore` + `edit --local` | ✅ done |
+| M4 | `sshx` + `sftpStore` + pull/push/status/diff (integration-tested on in-process gliderlabs/ssh) | ✅ done |
+| M5 | `init` wizard (incl. server import) + `team` | ✅ done |
+| M6 | CI, goreleaser, NO_COLOR, `version` | ✅ done — animated spinners/huh forms and brew tap publication remain |
 
 ### v2 anticipation (frozen now, built later)
 

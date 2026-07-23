@@ -94,11 +94,13 @@ Plaintext touches disk in exactly three places — your local env file, the serv
 $ go install github.com/volodymyrsokha/envbridge/cmd/envbridge@latest
 ```
 
-Homebrew tap and prebuilt binaries are planned for the first tagged release.
+Prebuilt binaries land on the [releases page](https://github.com/volodymyrsokha/envbridge/releases) with each tag; a Homebrew tap follows the first stable release.
 
 ## Status
 
-Early development — the design is settled ([DESIGN.md](DESIGN.md)), the surface above is being built. Not yet ready for production secrets.
+**Working pre-release.** The full command surface above is implemented and covered by tests, including integration tests that run every sync scenario against a real in-process SSH server: conflicts, hand-edit adoption, lock contention, trust-on-first-use, and team re-encryption. The design lives in [DESIGN.md](DESIGN.md).
+
+Until a tagged release and a security review, don't point it at secrets you can't rotate.
 
 ## License
 

@@ -1,0 +1,34 @@
+version: 2
+project_name: envbridge
+
+builds:
+  - main: ./cmd/envbridge
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X github.com/volodymyrsokha/envbridge/internal/version.Version={{.Version}}
+      - -X github.com/volodymyrsokha/envbridge/internal/version.Commit={{.ShortCommit}}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github-native
+
+brews:
+  - repository:
+      owner: volodymyrsokha
+      name: homebrew-tap
+    homepage: https://github.com/volodymyrsokha/envbridge
+    description: "Team .env management over SSH — no middle server"
+    license: MIT
+    # Flip to false (or remove) once the volodymyrsokha/homebrew-tap repo
+    # exists; goreleaser fails the release if it can't push the formula.
+    skip_upload: true

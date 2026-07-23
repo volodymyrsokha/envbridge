@@ -35,7 +35,7 @@ push, detects hand-edits and conflicts, and keeps backups.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRun: func(*cobra.Command, []string) {
-			if flagNoColor {
+			if flagNoColor || os.Getenv("NO_COLOR") != "" {
 				ui.DisableColor()
 			}
 		},
@@ -53,8 +53,20 @@ push, detects hand-edits and conflicts, and keeps backups.`,
 		newEditCmd(),
 		newTeamCmd(),
 		newKeygenCmd(),
+		newVersionCmd(),
 	)
 	return cmd
+}
+
+func newVersionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Print version and build information",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("envbridge %s (%s)\n", version.Version, version.Commit)
+		},
+	}
 }
 
 func Execute() {
