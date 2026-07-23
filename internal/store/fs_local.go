@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // NewLocal returns a Store on the local filesystem — for the binary running
@@ -12,14 +13,29 @@ func NewLocal(root string) *FS { return &FS{fs: localFS{}, Root: root} }
 
 type localFS struct{}
 
-func (localFS) ReadFile(path string) ([]byte, error) { return os.ReadFile(path) }
+// expandLocalTilde mirrors the sftp adapter: config paths like ~/store must
+// work identically when the same binary runs on the server via --local.
+func expandLocalTilde(p string) string {
+	if p != "~" && !strings.HasPrefix(p, "~/") {
+		return p
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return p
+	}
+	return filepath.Join(home, strings.TrimPrefix(p, "~"))
+}
+
+func (localFS) ReadFile(path string) ([]byte, error) {
+	return os.ReadFile(expandLocalTilde(path))
+}
 
 func (localFS) WriteFileAtomic(path string, data []byte, mode os.FileMode) error {
-	return AtomicWriteFile(path, data, mode)
+	return AtomicWriteFile(expandLocalTilde(path), data, mode)
 }
 
 func (localFS) CreateExcl(path string, data []byte) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	f, err := os.OpenFile(expandLocalTilde(path), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
 		return err
 	}
@@ -27,12 +43,13 @@ func (localFS) CreateExcl(path string, data []byte) error {
 	return errors.Join(werr, f.Close())
 }
 
-func (localFS) Remove(path string) error   { return os.Remove(path) }
-func (localFS) MkdirAll(path string) error { return os.MkdirAll(path, 0o755) }
+func (localFS) Remove(path string) error   { return os.Remove(expandLocalTilde(path)) }
+func (localFS) MkdirAll(path string) error { return os.MkdirAll(expandLocalTilde(path), 0o755) }
 func (localFS) Join(elem ...string) string { return filepath.Join(elem...) }
+func (localFS) Dir(path string) string     { return filepath.Dir(path) }
 
 func (localFS) ReadDirNames(path string) ([]string, error) {
-	entries, err := os.ReadDir(path)
+	entries, err := os.ReadDir(expandLocalTilde(path))
 	if err != nil {
 		return nil, err
 	}

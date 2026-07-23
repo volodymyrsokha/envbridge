@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
+	"sync"
 
 	"github.com/pkg/sftp"
 )
@@ -15,13 +17,31 @@ import (
 // SFTP session. pkg/sftp maps SSH_FX_NO_SUCH_FILE to os.ErrNotExist, which
 // the shared FS logic relies on.
 func NewSFTP(client *sftp.Client, root string) *FS {
-	return &FS{fs: sftpFS{client}, Root: root}
+	return &FS{fs: &sftpFS{c: client}, Root: root}
 }
 
-type sftpFS struct{ c *sftp.Client }
+type sftpFS struct {
+	c        *sftp.Client
+	home     string
+	homeOnce sync.Once
+}
 
-func (s sftpFS) ReadFile(p string) ([]byte, error) {
-	f, err := s.c.Open(p)
+// expand resolves a leading ~ against the remote home directory — SFTP has
+// no shell, so tilde paths from the config would otherwise create a literal
+// "~" directory on the server.
+func (s *sftpFS) expand(p string) string {
+	if p != "~" && !strings.HasPrefix(p, "~/") {
+		return p
+	}
+	s.homeOnce.Do(func() { s.home, _ = s.c.Getwd() })
+	if s.home == "" {
+		return p
+	}
+	return path.Join(s.home, strings.TrimPrefix(p, "~"))
+}
+
+func (s *sftpFS) ReadFile(p string) ([]byte, error) {
+	f, err := s.c.Open(s.expand(p))
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +49,8 @@ func (s sftpFS) ReadFile(p string) ([]byte, error) {
 	return io.ReadAll(f)
 }
 
-func (s sftpFS) WriteFileAtomic(p string, data []byte, mode os.FileMode) error {
+func (s *sftpFS) WriteFileAtomic(p string, data []byte, mode os.FileMode) error {
+	p = s.expand(p)
 	tmp := p + ".tmp-" + randHex(6)
 	f, err := s.c.OpenFile(tmp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC)
 	if err != nil {
@@ -61,8 +82,8 @@ func (s sftpFS) WriteFileAtomic(p string, data []byte, mode os.FileMode) error {
 	return nil
 }
 
-func (s sftpFS) CreateExcl(p string, data []byte) error {
-	f, err := s.c.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_EXCL)
+func (s *sftpFS) CreateExcl(p string, data []byte) error {
+	f, err := s.c.OpenFile(s.expand(p), os.O_WRONLY|os.O_CREATE|os.O_EXCL)
 	if err != nil {
 		return err
 	}
@@ -70,12 +91,13 @@ func (s sftpFS) CreateExcl(p string, data []byte) error {
 	return errors.Join(werr, f.Close())
 }
 
-func (s sftpFS) Remove(p string) error      { return s.c.Remove(p) }
-func (s sftpFS) MkdirAll(p string) error    { return s.c.MkdirAll(p) }
-func (s sftpFS) Join(elem ...string) string { return path.Join(elem...) }
+func (s *sftpFS) Remove(p string) error      { return s.c.Remove(s.expand(p)) }
+func (s *sftpFS) MkdirAll(p string) error    { return s.c.MkdirAll(s.expand(p)) }
+func (s *sftpFS) Join(elem ...string) string { return path.Join(elem...) }
+func (s *sftpFS) Dir(p string) string        { return path.Dir(p) }
 
-func (s sftpFS) ReadDirNames(p string) ([]string, error) {
-	infos, err := s.c.ReadDir(p)
+func (s *sftpFS) ReadDirNames(p string) ([]string, error) {
+	infos, err := s.c.ReadDir(s.expand(p))
 	if err != nil {
 		return nil, err
 	}

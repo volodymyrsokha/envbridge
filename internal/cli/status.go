@@ -109,10 +109,12 @@ func localColumn(p *project, env string, envCfg config.Environment, m *store.Man
 	}
 }
 
+// renderStatusTable relies on fmt's %-*s padding by rune count, which lines
+// up for the single-cell glyphs used here (✓ ● ⚠ ↓ –).
 func renderStatusTable(rows []statusRow) {
 	envW, localW, serverW := len("ENV"), len("LOCAL"), len("SERVER")
 	for _, r := range rows {
-		envW = max(envW, len(r.Env))
+		envW = max(envW, len([]rune(r.Env)))
 		localW = max(localW, len([]rune(r.Local)))
 		serverW = max(serverW, len([]rune(r.Server)))
 	}
@@ -122,11 +124,6 @@ func renderStatusTable(rows []statusRow) {
 			fmt.Printf("  %-*s  %s\n", envW, r.Env, ui.RenderError(errors.New(r.Error)))
 			continue
 		}
-		fmt.Printf("  %-*s  %-*s  %-*s  %s\n", envW, r.Env, localW+padAdjust(r.Local), r.Local, serverW+padAdjust(r.Server), r.Server, r.LastPush)
+		fmt.Printf("  %-*s  %-*s  %-*s  %s\n", envW, r.Env, localW, r.Local, serverW, r.Server, r.LastPush)
 	}
-}
-
-// padAdjust compensates %-*s byte-width padding for multi-byte glyphs like ✓.
-func padAdjust(s string) int {
-	return len(s) - len([]rune(s))
 }

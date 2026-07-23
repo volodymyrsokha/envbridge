@@ -158,3 +158,62 @@ func TestSFTPLockBootstrapsFreshStore(t *testing.T) {
 	}
 	unlock()
 }
+
+// startSSHServerAt serves SFTP with the given working directory, so tilde
+// paths resolve under it (Getwd on a fresh session returns the working dir).
+func startSSHServerAt(t *testing.T, workDir string) string {
+	t.Helper()
+	srv := &gliderssh.Server{
+		Handler: func(s gliderssh.Session) {},
+		SubsystemHandlers: map[string]gliderssh.SubsystemHandler{
+			"sftp": func(sess gliderssh.Session) {
+				server, err := sftp.NewServer(sess, sftp.WithServerWorkingDirectory(workDir))
+				if err != nil {
+					return
+				}
+				server.Serve()
+			},
+		},
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	go srv.Serve(ln)
+	t.Cleanup(func() { srv.Close() })
+	return ln.Addr().String()
+}
+
+func TestSFTPTildeExpansion(t *testing.T) {
+	home := t.TempDir()
+	addr := startSSHServerAt(t, home)
+	client := dialTestSFTP(t, addr)
+
+	s := NewSFTP(client, "~/envbridge-store")
+	ctx := context.Background()
+	if err := s.Init(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.WriteBlob(ctx, "prod", []byte("blob"), testManifest("~/app/.env")); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.WriteMaterialized(ctx, "prod", []byte("plain")); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(filepath.Join(home, "envbridge-store", "prod.env.age")); err != nil {
+		t.Errorf("blob not under expanded home: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(home, "app", ".env"))
+	if err != nil || string(data) != "plain" {
+		t.Errorf("materialized under expanded home = %q, %v", data, err)
+	}
+	if _, err := os.Stat(filepath.Join(home, "~")); err == nil {
+		t.Error("a literal ~ directory was created")
+	}
+
+	got, err := s.ReadPath(ctx, "~/app/.env")
+	if err != nil || string(got) != "plain" {
+		t.Errorf("ReadPath through tilde = %q, %v", got, err)
+	}
+}

@@ -28,6 +28,7 @@ type fsys interface {
 	MkdirAll(path string) error
 	ReadDirNames(path string) ([]string, error)
 	Join(elem ...string) string
+	Dir(path string) string
 }
 
 // FS implements Store with identical semantics wherever the files live: on
@@ -110,6 +111,9 @@ func (l *FS) WriteMaterialized(ctx context.Context, env string, plaintext []byte
 	m, err := l.ReadManifest(ctx, env)
 	if err != nil {
 		return err
+	}
+	if err := l.fs.MkdirAll(l.fs.Dir(m.MaterializePath)); err != nil {
+		return fmt.Errorf("cannot create directory for %s: %w", m.MaterializePath, err)
 	}
 	if err := l.fs.WriteFileAtomic(m.MaterializePath, plaintext, 0o600); err != nil {
 		return fmt.Errorf("cannot write %s: %w", m.MaterializePath, err)
