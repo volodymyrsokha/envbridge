@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func newTestLocal(t *testing.T) (*Local, string) {
+func newTestLocal(t *testing.T) (*FS, string) {
 	t.Helper()
 	root := t.TempDir()
 	l := NewLocal(filepath.Join(root, "store"))
