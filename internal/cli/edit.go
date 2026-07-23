@@ -185,6 +185,9 @@ func runEditor(path string) error {
 }
 
 func whoami() string {
+	if v := os.Getenv("ENVBRIDGE_USER"); v != "" {
+		return v
+	}
 	if u, err := user.Current(); err == nil {
 		return u.Username + "@" + hostname()
 	}

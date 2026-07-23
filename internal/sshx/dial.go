@@ -25,14 +25,45 @@ type Dialer struct {
 	Timeout     time.Duration
 }
 
+// DefaultDialer loads ~/.ssh/config itself (resolved via os.UserHomeDir, so
+// $HOME overrides work) — ssh_config's package-level Get resolves the home
+// directory through the passwd database and ignores $HOME.
 func DefaultDialer() *Dialer {
 	home, _ := os.UserHomeDir()
+	cfg := loadSSHConfig(filepath.Join(home, ".ssh", "config"))
 	return &Dialer{
-		GetOption:      ssh_config.Get,
-		GetOptions:     ssh_config.GetAll,
+		GetOption: func(alias, key string) string {
+			if cfg != nil {
+				if v, err := cfg.Get(alias, key); err == nil && v != "" {
+					return v
+				}
+			}
+			return ssh_config.Default(key)
+		},
+		GetOptions: func(alias, key string) []string {
+			if cfg != nil {
+				if vs, err := cfg.GetAll(alias, key); err == nil && len(vs) > 0 {
+					return vs
+				}
+			}
+			return nil
+		},
 		KnownHostsPath: filepath.Join(home, ".ssh", "known_hosts"),
 		Timeout:        15 * time.Second,
 	}
+}
+
+func loadSSHConfig(path string) *ssh_config.Config {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+	cfg, err := ssh_config.Decode(f)
+	if err != nil {
+		return nil
+	}
+	return cfg
 }
 
 func (d *Dialer) Dial(alias string) (*ssh.Client, error) {
