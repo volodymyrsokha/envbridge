@@ -1,6 +1,6 @@
 package main
 
-import "github.com/vladimirsokha/envbridge/internal/cli"
+import "github.com/volodymyrsokha/envbridge/internal/cli"
 
 func main() {
 	cli.Execute()

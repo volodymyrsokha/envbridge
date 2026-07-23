@@ -91,7 +91,7 @@ Plaintext touches disk in exactly three places — your local env file, the serv
 ## Install
 
 ```console
-$ go install github.com/vladimirsokha/envbridge/cmd/envbridge@latest
+$ go install github.com/volodymyrsokha/envbridge/cmd/envbridge@latest
 ```
 
 Homebrew tap and prebuilt binaries are planned for the first tagged release.

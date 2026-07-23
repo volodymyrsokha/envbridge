@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vladimirsokha/envbridge/internal/ui"
-	"github.com/vladimirsokha/envbridge/internal/version"
+	"github.com/volodymyrsokha/envbridge/internal/ui"
+	"github.com/volodymyrsokha/envbridge/internal/version"
 )
 
 var (
